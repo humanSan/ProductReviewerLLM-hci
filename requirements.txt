@@ -5,4 +5,4 @@ langchain-chroma
 langchain
 langchain-core
 protobuf==3.20.*
-pysqlite3-binary
+pysqlite3-binary >= 3.35.0
