@@ -74,7 +74,7 @@ if product == "IceBucket":
 if product == "WashingMachine":
     k = 3
 
-if st.button("Comprehensive Summary"):
+if st.button("General Product Summary"):
     # System prompt for automatic summary, using {context} as a placeholder for the reviews
     system_prompt = (
         "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
