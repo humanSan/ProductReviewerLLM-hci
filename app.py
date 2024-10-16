@@ -41,7 +41,7 @@ for file in filenames:
     descriptions.append(dfile.read())
 
     #vectorstore = Chroma.from_documents(collection_name = file, documents=docs[i], embedding=g_embed, persist_directory="./rag_vectorstore") #use to create new vector db or append to existing db
-    vectordblist.append(Chroma(collection_name = filenames[i], persist_directory="./rag_vectorstore", embedding_function=g_embed)) #use to access preexisting vector db
+    vectordblist.append(Chroma(collection_name = file, persist_directory="./rag_vectorstore", embedding_function=g_embed)) #use to access preexisting vector db
     
     #retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50}) #use with new db to append
     retrievers.append( vectordblist[i].as_retriever(search_type="similarity", search_kwargs={"k": 50}) )
