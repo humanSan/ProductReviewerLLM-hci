@@ -14,54 +14,43 @@ load_dotenv()
 key = os.getenv("GOOGLE_API_KEY")
 
 llm_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash", api_key = key)
+g_embed = GoogleGenerativeAIEmbeddings(model = "models/text-embedding-004")
 
 #genai.configure(api_key = key) 
 
 
-loader = JSONLoader(
-    file_path='./ReviewJson/Headphones_text.json',
-    jq_schema='.review',
-    text_content=False,
-    json_lines=True)
+filenames = ["AlarmClock", "Headphones", "IceBucket", "WashingMachine"]
 
-docs = loader.load()
-#print(docs[100].page_content)
+docs=[]
+descriptions = []
+vectordblist = []
+retrievers = []
+rag_chain = []
 
-g_embed = GoogleGenerativeAIEmbeddings(model = "models/text-embedding-004")
+i = 0
+for file in filenames:
+    loader = JSONLoader(
+        file_path='./ReviewJson/' + file + '.json',
+        jq_schema='.review',
+        text_content=False,
+        json_lines=True)
+    
+    docs.append(loader.load())
+    #print(docs[100].page_content)
+    dfile = open("./ProductDescriptions/"+file+".txt", "r")
+    descriptions.append(dfile.read())
 
-#vectorstore = Chroma.from_documents(collection_name = "headphones", documents=docs, embedding=g_embed, persist_directory="./rag_vectorstore")
+    #vectorstore = Chroma.from_documents(collection_name = file, documents=docs[i], embedding=g_embed, persist_directory="./rag_vectorstore") #use to create new vector db or append to existing db
+    vectordblist.append(Chroma(collection_name = filenames[i], persist_directory="./rag_vectorstore", embedding_function=g_embed)) #use to access preexisting vector db
+    
+    #retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50}) #use with new db to append
+    retrievers.append( vectordblist[i].as_retriever(search_type="similarity", search_kwargs={"k": 50}) )
+    
+    i+=1
 
-#this function uses an existing Chroma vector database. The line above I think creates/appends the vector database on every run, so it keeps growing in size.
-vectordb = Chroma(collection_name = "headphones", persist_directory="./rag_vectorstore", embedding_function=g_embed)
 
-#retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50})
-retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 40})
-
-dfile = open("./ProductDescriptions/HeadphonesDescription.txt", "r")
-description = dfile.read()
 
 #model = genai.GenerativeModel("gemini-1.5-flash")
-
-system_prompt = (
-    "You are a product analyst."
-    "Based on the information in the following product reviews, create a useful "
-    "answer to the question about the product. Consider different perspecives and different possibilities." 
-    "Be very detailed and give descriptive answers. Write your response objectively and directly about the product."
-    "Here is the product description for this product:" 
-    + description +
-    "\n\n"
-    "{context}"
-)
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ]
-)
-
-question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
-rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
 
 st.title("🦜🔗 Test Streamlit-Langchain App")
@@ -73,10 +62,30 @@ with st.form("form"):
    )
    submitted = st.form_submit_button("Enter")
 
+k=3
 if(submitted):
-   
-   response = rag_chain.invoke({'input': user_input})
-   st.write(response["answer"])
+    system_prompt = (
+        "You are a product analyst."
+        "Based on the information in the following product reviews, create a useful "
+        "answer to the question about the product. Consider different perspecives and different possibilities." 
+        "Be very detailed and give descriptive answers. Write your response objectively and directly about the product."
+        "Here is the product description for this product:" 
+        + descriptions[k] +
+        "\n\n"
+        "{context}"
+    )
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("human", "{input}"),
+        ]
+    )
+
+    question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+    rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+
+    response = rag_chain.invoke({'input': user_input})
+    st.write(response["answer"])
 
 
 
