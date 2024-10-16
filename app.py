@@ -62,7 +62,43 @@ with st.form("form"):
    )
    submitted = st.form_submit_button("Enter")
 
-k = 3
+k = 0
+product = st.sidebar.radio("Product", filenames)
+
+if product == "AlarmClock":
+    k = 0
+if product == "Headphones":
+    k = 1
+if product == "IceBucket":
+    k = 2
+if product == "WashingMachine":
+    k = 3
+
+if st.button("General Product Summary"):
+    # System prompt for automatic summary, using {context} as a placeholder for the reviews
+    system_prompt = (
+        "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
+        "and areas for improvement. Highlight what customers liked most and where there were consistent complaints "
+        "or suggestions for enhancement. Make sure to include any specific product features or experiences that "
+        "were praised or criticized.\n\n"
+        "Here is the product description for this product: "
+        + descriptions[k] +
+        "\n\n{context}"
+    )
+    
+    # Create a prompt template that accepts the 'context' variable
+    prompt = ChatPromptTemplate.from_template(
+        system_prompt  # This template contains the {context} variable
+    )
+
+    question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+    rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+
+    response = rag_chain.invoke({'input': user_input})
+    st.write(response["answer"])
+
+
+
 if(submitted):
     system_prompt = (
         "You are a product analyst."
@@ -86,7 +122,4 @@ if(submitted):
 
     response = rag_chain.invoke({'input': user_input})
     st.write(response["answer"])
-
-
-
 
