@@ -62,7 +62,7 @@ with st.form("form"):
    )
    submitted = st.form_submit_button("Enter")
 
-k=3
+k = 3
 if(submitted):
     system_prompt = (
         "You are a product analyst."
