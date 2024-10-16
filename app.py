@@ -63,6 +63,19 @@ with st.form("form"):
    submitted = st.form_submit_button("Enter")
 
 k = 3
+product = st.sidebar.radio("Product", filenames)
+
+if product == "AlarmClock":
+    k = 0
+if product == "Headphones":
+    k = 1
+if product == "IceBucket":
+    k = 2
+if product == "WashingMachine":
+    k = 3
+
+
+
 if(submitted):
     system_prompt = (
         "You are a product analyst."
