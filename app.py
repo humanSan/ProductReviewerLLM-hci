@@ -59,7 +59,7 @@ for file in filenames:
 #model = genai.GenerativeModel("gemini-1.5-flash")
 
 
-st.title("🦜🔗 Test Streamlit-Langchain App")
+st.title("InsightGen: AI-Powered Feedback Summarizer")
 
 
 with st.form("form"):
