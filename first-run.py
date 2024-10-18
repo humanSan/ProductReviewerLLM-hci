@@ -48,6 +48,27 @@ for file in filenames:
     
     i+=1
 
+docs.clear()
+
+#for sentiment vectorstore creation
+i = 0
+for file in filenames:
+    loader = JSONLoader(
+        file_path='./SentimentReviewJson/' + file + '.json',
+        jq_schema='.review',
+        text_content=False,
+        json_lines=True)
+    
+    docs.append(loader.load())
+    #print(docs[100].page_content)
+
+    vectorstore = Chroma.from_documents(collection_name = file+"_Sentiment", documents=docs[i], embedding=g_embed, persist_directory="./rag_vectorstore") #use to create new vector db or append to existing db
+    #vectordblist[i] = Chroma(collection_name = filenames[i], persist_directory="./rag_vectorstore", embedding_function=g_embed) #use to access preexisting vector db
+    
+    #retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50}) #use with new db to append
+    #retrievers.append( vectordblist[i].as_retriever(search_type="similarity", search_kwargs={"k": 50}) )
+    
+    i+=1
 
 
 #model = genai.GenerativeModel("gemini-1.5-flash")

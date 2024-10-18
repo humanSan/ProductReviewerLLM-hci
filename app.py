@@ -31,17 +31,13 @@ docs=[]
 descriptions = []
 vectordblist = []
 retrievers = []
-rag_chain = []
+
+sentiment_vectordblist = []
+sentiment_retrievers = []
 
 i = 0
 for file in filenames:
-    loader = JSONLoader(
-        file_path='./ReviewJson/' + file + '.json',
-        jq_schema='.review',
-        text_content=False,
-        json_lines=True)
-    
-    docs.append(loader.load())
+
     #print(docs[100].page_content)
     dfile = open("./ProductDescriptions/"+file+".txt", "r")
     descriptions.append(dfile.read())
@@ -54,7 +50,16 @@ for file in filenames:
     
     i+=1
 
+i=0
+for file in filenames:
 
+    #vectorstore = Chroma.from_documents(collection_name = file, documents=docs[i], embedding=g_embed, persist_directory="./rag_vectorstore") #use to create new vector db or append to existing db
+    sentiment_vectordblist.append(Chroma(collection_name = file+"_Sentiment", persist_directory="./rag_vectorstore", embedding_function=g_embed)) #use to access preexisting vector db
+    
+    #retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50}) #use with new db to append
+    sentiment_retrievers.append( sentiment_vectordblist[i].as_retriever(search_type="similarity", search_kwargs={"k": 50}) )
+    
+    i+=1
 
 #model = genai.GenerativeModel("gemini-1.5-flash")
 
@@ -71,6 +76,8 @@ with st.form("form"):
 k = 0
 product = st.sidebar.radio("Product", filenames)
 
+sentimentBool = st.sidebar.checkbox("Use Sentiment Analysis")
+
 if product == "AlarmClock":
     k = 0
 if product == "Headphones":
@@ -81,51 +88,100 @@ if product == "WashingMachine":
     k = 3
 
 if st.button("General Product Summary"):
-    # System prompt for automatic summary, using {context} as a placeholder for the reviews
-    system_prompt = (
-        "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
-        "and areas for improvement. Highlight what customers liked most and where there were consistent complaints "
-        "or suggestions for enhancement. Make sure to include any specific product features or experiences that "
-        "were praised or criticized.\n\n"
-        "Here is the product description for this product: "
-        + descriptions[k] +
-        "\n\n{context}"
-    )
-    
-    # Create a prompt template that accepts the 'context' variable
-    prompt = ChatPromptTemplate.from_template(
-        system_prompt  # This template contains the {context} variable
-    )
+    if(sentimentBool):
+        system_prompt = (
+            "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
+            "and areas for improvement. Highlight what customers liked most and where there were consistent complaints "
+            "or suggestions for enhancement. Make sure to include any specific product features or experiences that "
+            "were praised or criticized.Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. These sentiments reflect the tone of the reviewer when they wrote the review. Think about how these sentiments impact the reviews and use it to improve your answers.\n\n"
+            "Here is the product description for this product: "
+            + descriptions[k] +
+            "\n\n{context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
 
-    question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
-    rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+        question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+        rag_chain = create_retrieval_chain(sentiment_retrievers[k], question_answer_chain)
 
-    response = rag_chain.invoke({'input': user_input})
-    st.write(response["answer"])
+        response = rag_chain.invoke({'input': user_input})
+        st.write(response["answer"])
+        
+    else:
+        system_prompt = (
+            "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
+            "and areas for improvement. Highlight what customers liked most and where there were consistent complaints "
+            "or suggestions for enhancement. Make sure to include any specific product features or experiences that "
+            "were praised or criticized.\n\n"
+            "Here is the product description for this product: "
+            + descriptions[k] +
+            "\n\n{context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+
+        question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+        rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+
+        response = rag_chain.invoke({'input': user_input})
+        st.write(response["answer"])
 
 
 
 if(submitted):
-    system_prompt = (
-        "You are a product analyst."
-        "Based on the information in the following product reviews, create a useful "
-        "answer to the question about the product. Consider different perspecives and different possibilities." 
-        "Be very detailed and give descriptive answers. Write your response objectively and directly about the product."
-        "Here is the product description for this product:" 
-        + descriptions[k] +
-        "\n\n"
-        "{context}"
-    )
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}"),
-        ]
-    )
+    if(sentimentBool):
+        system_prompt = (
+            "You are a product analyst."
+            "Based on the information in the following product reviews, create a useful "
+            "answer to the question about the product. Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. These sentiments reflect the tone of the reviewer when they wrote the review. Think about how these sentiments impact the reviews and use it to improve your answers. Consider different perspecives and different possibilities." 
+            "Be detailed and give descriptive answers. Write your response directly about the product, not about reviewers."
+            "Here is the product description for this product:" 
+            + descriptions[k] +
+            "\n\n"
+            "{context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
 
-    question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
-    rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+        question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+        rag_chain = create_retrieval_chain(sentiment_retrievers[k], question_answer_chain)
 
-    response = rag_chain.invoke({'input': user_input})
-    st.write(response["answer"])
+        response = rag_chain.invoke({'input': user_input})
+        st.write(response["answer"])
+        
+    else:
+        system_prompt = (
+            "You are a product analyst."
+            "Based on the information in the following product reviews, create a useful "
+            "answer to the question about the product. Consider different perspecives and different possibilities." 
+            "Be detailed and give descriptive answers. Write your response objectively and directly about the product."
+            "Here is the product description for this product:" 
+            + descriptions[k] +
+            "\n\n"
+            "{context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+
+        question_answer_chain = create_stuff_documents_chain(llm_model, prompt)
+        rag_chain = create_retrieval_chain(retrievers[k], question_answer_chain)
+
+        response = rag_chain.invoke({'input': user_input})
+        st.write(response["answer"])
 
