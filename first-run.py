@@ -54,7 +54,7 @@ docs.clear()
 i = 0
 for file in filenames:
     loader = JSONLoader(
-        file_path='./SentimentReviewJson/' + file + '.json',
+        file_path='./SentimentReviewJson/Sentiment' + file + '.json',
         jq_schema='.review',
         text_content=False,
         json_lines=True)
