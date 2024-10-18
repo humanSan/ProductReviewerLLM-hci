@@ -93,7 +93,7 @@ if st.button("General Product Summary"):
             "You are a product analyst. Summarize the following reviews by identifying key strengths, weaknesses, "
             "and areas for improvement. Highlight what customers liked most and where there were consistent complaints "
             "or suggestions for enhancement. Make sure to include any specific product features or experiences that "
-            "were praised or criticized.Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. These sentiments reflect the tone of the reviewer when they wrote the review. Think about how these sentiments impact the reviews and use it to improve your answers.\n\n"
+            "were praised or criticized. Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. Positive responses show that the user praised and liked aspects of the product, while negative responses show the user criticized and disliked aspects of the product. These sentiments can differentiate between which aspects were praised and which were criticized. Think about these sentiments and use it to improve your summary.\n\n"
             "Here is the product description for this product: "
             + descriptions[k] +
             "\n\n{context}"
@@ -141,7 +141,7 @@ if(submitted):
         system_prompt = (
             "You are a product analyst."
             "Based on the information in the following product reviews, create a useful "
-            "answer to the question about the product. Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. These sentiments reflect the tone of the reviewer when they wrote the review. Think about how these sentiments impact the reviews and use it to improve your answers. Consider different perspecives and different possibilities." 
+            "answer to the question about the product. Each review starts with a sentiment analysis statement that tells you if the review is very negative, negative, neutral, positive, or very positive. Positive responses show that the user praised and liked aspects of the product, while negative responses show the user criticized and disliked aspects of the product. These sentiments can differentiate between which aspects were praised and which were criticized. Think about these sentiments and use it to improve your answers. Consider different perspecives and different possibilities." 
             "Be detailed and give descriptive answers. Write your response directly about the product, not about reviewers."
             "Here is the product description for this product:" 
             + descriptions[k] +
